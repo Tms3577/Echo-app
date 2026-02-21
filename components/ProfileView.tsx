@@ -4,9 +4,10 @@ import { User, FeedItem } from '../types';
 
 interface ProfileViewProps {
   user: User;
-  posts: FeedItem[];
+  allPosts: FeedItem[];
   onTogglePrivacy?: (isPrivate: boolean) => void;
   onFollow?: (userId: string, isFollowing: boolean) => void;
+  onMessage?: (user: User) => void;
   onOpenSettings?: () => void;
   onBack?: () => void;
   isOwnProfile?: boolean;
@@ -15,14 +16,20 @@ interface ProfileViewProps {
 
 const ProfileView: React.FC<ProfileViewProps> = ({ 
   user, 
-  posts, 
+  allPosts, 
   onTogglePrivacy, 
   onFollow, 
+  onMessage,
   onOpenSettings, 
   onBack, 
   isOwnProfile = true,
   isFollowing = false
 }) => {
+  const userPosts = React.useMemo(() => 
+    allPosts.filter(p => p.userId === user.id),
+    [allPosts, user.id]
+  );
+
   const handleFollow = () => {
     const nextState = !isFollowing;
     if (onFollow) {
@@ -114,15 +121,21 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         {/* User Stats */}
         <div className="flex gap-4 w-full px-2">
           <div className="flex-1 glass-card rounded-[1.5rem] p-4 text-center border-white/5 group hover:border-[#00f2ff]/20 transition-all">
-            <p className="text-xl font-black text-white">{posts.length}</p>
+            <p className="text-xl font-black text-white">{userPosts.length}</p>
             <p className="text-[9px] text-zinc-600 uppercase tracking-[0.2em] font-black group-hover:text-zinc-400 transition-colors">Echoes</p>
           </div>
           <div className="flex-1 glass-card rounded-[1.5rem] p-4 text-center border-white/5 group hover:border-[#00f2ff]/20 transition-all">
-            <p className="text-xl font-black text-white">{((user.followers + (isFollowing ? 1 : 0)) / 1000).toFixed(1)}K</p>
+            <p className="text-xl font-black text-white">
+              {user.followers >= 1000 
+                ? `${((user.followers + (isFollowing ? 1 : 0)) / 1000).toFixed(1)}K` 
+                : user.followers + (isFollowing ? 1 : 0)}
+            </p>
             <p className="text-[9px] text-zinc-600 uppercase tracking-[0.2em] font-black group-hover:text-zinc-400 transition-colors">Followers</p>
           </div>
           <div className="flex-1 glass-card rounded-[1.5rem] p-4 text-center border-white/5 group hover:border-[#00f2ff]/20 transition-all">
-            <p className="text-xl font-black text-white">{user.following}</p>
+            <p className="text-xl font-black text-white">
+              {user.following >= 1000 ? `${(user.following / 1000).toFixed(1)}K` : user.following}
+            </p>
             <p className="text-[9px] text-zinc-600 uppercase tracking-[0.2em] font-black group-hover:text-zinc-400 transition-colors">Following</p>
           </div>
         </div>
@@ -133,19 +146,27 @@ const ProfileView: React.FC<ProfileViewProps> = ({
              {!isOwnProfile ? (
                <button 
                  onClick={handleFollow}
-                 className={`flex-1 h-14 rounded-[2rem] font-black text-xs tracking-[0.3em] uppercase transition-all shadow-2xl flex items-center justify-center gap-3 active:scale-95 ${isFollowing ? 'bg-white/5 text-[#00f2ff] border border-[#00f2ff]/30' : 'bg-[#00f2ff] text-black shadow-[0_0_20px_rgba(0,242,255,0.4)]'}`}
+                 className={`flex-1 h-14 rounded-[2rem] font-black text-[10px] tracking-[0.4em] uppercase transition-all flex items-center justify-center gap-3 active:scale-95 border-2 ${
+                   isFollowing 
+                   ? 'bg-white/5 border-white/10 text-[#00f2ff] shadow-[0_0_20px_rgba(0,242,255,0.1)] hover:bg-white/10' 
+                   : 'bg-[#00f2ff] border-[#00f2ff] text-black shadow-[0_0_30px_rgba(0,242,255,0.4)] hover:shadow-[0_0_40px_rgba(0,242,255,0.6)]'
+                 }`}
                >
-                 {isFollowing ? 'UNFOLLOW NODE' : 'FOLLOW NODE'}
                  {isFollowing ? (
-                   <div className="flex gap-0.5">
-                     {[...Array(3)].map((_, i) => (
-                       <div key={i} className="w-1 h-1 rounded-full bg-[#00f2ff] animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
-                     ))}
-                   </div>
+                   <>
+                     <span>LINK_ACTIVE</span>
+                     <div className="flex gap-1 items-center">
+                       <div className="w-1.5 h-1.5 rounded-full bg-[#00f2ff] animate-pulse" />
+                       <div className="w-1 h-1 rounded-full bg-[#00f2ff]/40" />
+                     </div>
+                   </>
                  ) : (
-                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                   </svg>
+                   <>
+                     <span>SYNC_NODE</span>
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                     </svg>
+                   </>
                  )}
                </button>
              ) : (
@@ -157,7 +178,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                </button>
              )}
              
-             <button className="w-14 h-14 flex items-center justify-center rounded-[2rem] bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-all active:scale-95">
+             <button 
+               onClick={() => onMessage && onMessage(user)}
+               className="w-14 h-14 flex items-center justify-center rounded-[2rem] bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-all active:scale-95"
+               title="Initiate Direct Echo"
+             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
@@ -190,7 +215,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
 
       {/* Posts Grid */}
       <div className="grid grid-cols-3 gap-1 rounded-[2.5rem] overflow-hidden border border-white/5 bg-white/5 p-1">
-        {posts.length > 0 ? posts.map((post) => (
+        {userPosts.length > 0 ? userPosts.map((post) => (
           <div 
             key={post.id} 
             className="aspect-square relative group overflow-hidden bg-zinc-900 cursor-pointer rounded-[1.5rem]"

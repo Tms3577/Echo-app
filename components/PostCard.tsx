@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
-import { FeedItem } from '../types';
+import { FeedItem, User, Comment } from '../types';
 import PulseButton from './PulseButton';
 
 interface PostCardProps {
   item: FeedItem;
+  currentUser: User;
   onPulse: (id: string) => void;
   onResonate: (id: string) => void;
   onUserClick?: (userId: string) => void;
+  onEditCaption: (id: string, newCaption: string) => void;
+  onAddComment: (id: string, commentText: string) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate, onUserClick }) => {
+const PostCard: React.FC<PostCardProps> = ({ item, currentUser, onPulse, onResonate, onUserClick, onEditCaption, onAddComment }) => {
   const [rippling, setRippling] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isEditingCaption, setIsEditingCaption] = useState(false);
+  const [editedCaption, setEditedCaption] = useState(item.caption);
+  const [newComment, setNewComment] = useState('');
+  const [showComments, setShowComments] = useState(false);
 
   const handlePulseClick = () => {
     setRippling(true);
@@ -23,6 +30,19 @@ const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate, onUserCl
   const handleResonateClick = () => {
     onResonate(item.id);
     if (window.navigator.vibrate) window.navigator.vibrate([10, 30, 10]);
+  };
+
+  const handleSaveCaption = () => {
+    onEditCaption(item.id, editedCaption);
+    setIsEditingCaption(false);
+  };
+
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newComment.trim()) {
+      onAddComment(item.id, newComment);
+      setNewComment('');
+    }
   };
 
   const handleShare = async () => {
@@ -51,6 +71,8 @@ const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate, onUserCl
       alert("Anomaly logged. System review initiated.");
     }
   };
+
+  const isOwner = currentUser.id === item.userId;
 
   return (
     <div className={`glass-card rounded-[2.5rem] group border-white/5 hover:border-[#00f2ff]/20 transition-all duration-700 shadow-2xl bg-[#050505]/40 animate-in fade-in slide-in-from-bottom-6 duration-700 ${showMenu ? 'z-40 relative' : 'z-0 relative'}`}>
@@ -95,7 +117,18 @@ const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate, onUserCl
           {showMenu && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 top-12 w-32 bg-[#050505] border border-white/10 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="absolute right-0 top-12 w-40 bg-[#050505] border border-white/10 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                {isOwner && (
+                  <button 
+                    onClick={() => {
+                      setIsEditingCaption(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-zinc-300 hover:bg-white/5 transition-colors border-b border-white/5"
+                  >
+                    Edit Caption
+                  </button>
+                )}
                 <button 
                   onClick={handleReport}
                   className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-white/5 transition-colors"
@@ -171,14 +204,54 @@ const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate, onUserCl
             </button>
             <span className="text-[10px] text-zinc-600 font-black tracking-widest uppercase">Share</span>
           </div>
+
+          <div className="flex flex-col items-center gap-1.5">
+            <button 
+              onClick={() => setShowComments(!showComments)}
+              className={`w-12 h-12 flex items-center justify-center rounded-[1.25rem] bg-white/5 border border-white/5 transition-all active:scale-75 ${showComments ? 'text-[#00f2ff] border-[#00f2ff]/40 bg-[#00f2ff]/5' : 'text-zinc-500 hover:text-white hover:bg-white/10'}`}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </button>
+            <span className={`text-[10px] font-black tracking-widest uppercase ${showComments ? 'text-[#00f2ff]' : 'text-zinc-600'}`}>
+              {item.comments?.length || 0}
+            </span>
+          </div>
         </div>
 
         {/* Caption */}
         <div className="space-y-3">
-          <p className="text-sm leading-relaxed text-zinc-200">
-            <span className="font-black mr-2 text-white">{item.username}</span>
-            <span className="font-light opacity-90">{item.caption}</span>
-          </p>
+          {isEditingCaption ? (
+            <div className="flex flex-col gap-2">
+              <textarea
+                className="w-full bg-white/5 border border-[#00f2ff]/30 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#00f2ff] transition-all resize-none"
+                value={editedCaption}
+                onChange={(e) => setEditedCaption(e.target.value)}
+                rows={3}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button 
+                  onClick={() => setIsEditingCaption(false)}
+                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSaveCaption}
+                  className="px-4 py-2 bg-[#00f2ff] text-black rounded-lg text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(0,242,255,0.3)]"
+                >
+                  Save Echo
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm leading-relaxed text-zinc-200">
+              <span className="font-black mr-2 text-white">{item.username}</span>
+              <span className="font-light opacity-90">{item.caption}</span>
+            </p>
+          )}
           <button className="text-[10px] text-[#00f2ff] font-black uppercase tracking-[0.2em] opacity-60 hover:opacity-100 transition-opacity active:scale-95 text-left flex items-center gap-2 group/chain">
             View Resonance Chain
             <svg className="w-3 h-3 group-hover/chain:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,6 +259,60 @@ const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate, onUserCl
             </svg>
           </button>
         </div>
+
+        {/* Comments Section */}
+        {showComments && (
+          <div className="mt-4 pt-6 border-t border-white/5 space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+              {item.comments && item.comments.length > 0 ? (
+                item.comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3 group/comment">
+                    <img 
+                      src={comment.avatar} 
+                      alt={comment.username} 
+                      className="w-8 h-8 rounded-full object-cover border border-white/10" 
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-black text-white">{comment.username}</span>
+                        <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">{comment.timestamp}</span>
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{comment.text}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em] text-center py-4">No resonance signals detected</p>
+              )}
+            </div>
+
+            <form onSubmit={handleAddComment} className="flex gap-3">
+              <img 
+                src={currentUser.avatar} 
+                alt={currentUser.username} 
+                className="w-10 h-10 rounded-full object-cover border border-[#00f2ff]/20" 
+              />
+              <div className="flex-1 relative">
+                <input 
+                  type="text" 
+                  placeholder="Inject signal..."
+                  className="w-full h-10 bg-white/5 border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-[#00f2ff]/50 transition-all placeholder:text-zinc-700"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                />
+                <button 
+                  type="submit"
+                  disabled={!newComment.trim()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[#00f2ff] disabled:text-zinc-700 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

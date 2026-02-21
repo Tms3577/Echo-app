@@ -20,6 +20,15 @@ export interface Wave {
   hasSeen?: boolean;
 }
 
+export interface Comment {
+  id: string;
+  userId: string;
+  username: string;
+  avatar: string;
+  text: string;
+  timestamp: string;
+}
+
 export interface FeedItem {
   id: string;
   userId: string;
@@ -34,11 +43,14 @@ export interface FeedItem {
   hasResonated: boolean;
   timestamp: string;
   originalCreator?: string;
+  comments?: Comment[];
 }
 
 export interface Conversation {
   id: string; // matches conversation_id in SQL
   participants: User[];
+  name?: string;
+  isGroup?: boolean;
   last_message?: string;
   last_message_time?: number;
   is_read: boolean;

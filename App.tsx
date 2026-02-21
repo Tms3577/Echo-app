@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { NavTab, User, FeedItem, Wave, Notification } from './types';
+import { NavTab, User, FeedItem, Wave, Notification, Comment } from './types';
 import WaveBar from './components/WaveBar';
 import Navbar from './components/Navbar';
 import PulseFeed from './components/PulseFeed';
@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeWave, setActiveWave] = useState<Wave | null>(null);
   const [isMessagingOpen, setIsMessagingOpen] = useState(false);
+  const [messagingTarget, setMessagingTarget] = useState<User | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [viewingProfile, setViewingProfile] = useState<User | null>(null);
@@ -112,6 +113,32 @@ const App: React.FC = () => {
     }
 
     if (window.navigator.vibrate) window.navigator.vibrate(10);
+  };
+
+  const handleEditCaption = (id: string, newCaption: string) => {
+    setFeed(prev => prev.map(item => 
+      item.id === id ? { ...item, caption: newCaption } : item
+    ));
+  };
+
+  const handleAddComment = (id: string, commentText: string) => {
+    const newComment: Comment = {
+      id: `comment-${Date.now()}`,
+      userId: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      text: commentText,
+      timestamp: 'Just now'
+    };
+
+    setFeed(prev => prev.map(item => 
+      item.id === id ? { ...item, comments: [...(item.comments || []), newComment] } : item
+    ));
+
+    const targetItem = feed.find(f => f.id === id);
+    if (targetItem) {
+      createNotification(targetItem.userId, 'mention', id, `commented on your echo: "${commentText.substring(0, 20)}..."`);
+    }
   };
 
   const handleResonate = (id: string) => {
@@ -285,7 +312,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAuthSuccess = (username: string, password?: string, mode?: 'login' | 'signup') => {
+  const handleAuthSuccess = (username: string, password?: string, mode?: 'login' | 'signup', displayName?: string) => {
     const mockToken = `echo_jwt_${Math.random().toString(36).substr(2)}`;
     
     if (username) {
@@ -320,7 +347,7 @@ const App: React.FC = () => {
           ...MOCK_USER,
           id: `user_${Date.now()}`,
           username: normalizedUsername,
-          displayName: username,
+          displayName: displayName || username,
         };
         const userToSave = { ...activeUser, password };
         usersDb.push(userToSave);
@@ -328,8 +355,10 @@ const App: React.FC = () => {
       }
 
       setUser(activeUser);
-      localStorage.setItem('echo_user', JSON.stringify(activeUser));
-      localStorage.setItem('echo_token', mockToken);
+      if (mode === 'login') {
+        localStorage.setItem('echo_user', JSON.stringify(activeUser));
+        localStorage.setItem('echo_token', mockToken);
+      }
       setIsLoggedIn(true);
     }
   };
@@ -367,9 +396,13 @@ const App: React.FC = () => {
       return (
         <ProfileView 
           user={viewingProfile} 
-          posts={feed.filter(f => f.userId === viewingProfile.id)}
+          allPosts={feed}
           onFollow={handleFollowNode}
           isFollowing={followingIds.has(viewingProfile.id)}
+          onMessage={(u) => {
+            setMessagingTarget(u);
+            setIsMessagingOpen(true);
+          }}
           onBack={() => setViewingProfile(null)}
           isOwnProfile={viewingProfile.id === user.id}
           onOpenSettings={viewingProfile.id === user.id ? () => setIsSettingsOpen(true) : undefined}
@@ -390,9 +423,12 @@ const App: React.FC = () => {
             {feed.length > 0 ? (
               <PulseFeed 
                 items={feed} 
+                currentUser={user}
                 onPulse={handlePulse} 
                 onResonate={handleResonate} 
                 onUserClick={handleProfileLookupById}
+                onEditCaption={handleEditCaption}
+                onAddComment={handleAddComment}
               />
             ) : (
               <div className="flex flex-col items-center justify-center py-40 opacity-20 text-center space-y-4">
@@ -456,10 +492,14 @@ const App: React.FC = () => {
         return (
           <ProfileView 
             user={user} 
-            posts={feed.filter(f => f.username === user.username)} 
+            allPosts={feed} 
             onTogglePrivacy={(isPrivate) => setUser(prev => ({ ...prev, isPrivate }))}
             onFollow={handleFollowNode}
             isFollowing={false} // Can't follow self
+            onMessage={(u) => {
+              setMessagingTarget(u);
+              setIsMessagingOpen(true);
+            }}
             onOpenSettings={() => setIsSettingsOpen(true)}
             isOwnProfile={true}
           />
@@ -508,7 +548,14 @@ const App: React.FC = () => {
       />
 
       {isMessagingOpen && (
-        <DirectEcho onClose={() => setIsMessagingOpen(false)} />
+        <DirectEcho 
+          onClose={() => {
+            setIsMessagingOpen(false);
+            setMessagingTarget(null);
+          }} 
+          availableUsers={getUniqueUsers()}
+          initialUser={messagingTarget}
+        />
       )}
 
       {isSettingsOpen && (

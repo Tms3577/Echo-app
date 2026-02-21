@@ -7,9 +7,10 @@ interface PulseFeedProps {
   items: FeedItem[];
   onPulse: (id: string) => void;
   onResonate: (id: string) => void;
+  onUserClick?: (userId: string) => void;
 }
 
-const PulseFeed: React.FC<PulseFeedProps> = ({ items, onPulse, onResonate }) => {
+const PulseFeed: React.FC<PulseFeedProps> = ({ items, onPulse, onResonate, onUserClick }) => {
   return (
     <div className="flex flex-col gap-10">
       {items.map((item) => (
@@ -18,6 +19,7 @@ const PulseFeed: React.FC<PulseFeedProps> = ({ items, onPulse, onResonate }) => 
           item={item} 
           onPulse={onPulse} 
           onResonate={onResonate} 
+          onUserClick={onUserClick}
         />
       ))}
     </div>

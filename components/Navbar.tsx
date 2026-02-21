@@ -23,8 +23,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, unreadCount = 0
   };
 
   return (
-    <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-[100] px-1">
-      <div className="bg-[#0a0a0a]/40 backdrop-blur-[32px] rounded-[2.5rem] p-2 flex justify-between items-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10 ring-1 ring-white/5 relative overflow-hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-8 flex justify-center pointer-events-none">
+      <div className="bg-[#0a0a0a]/80 backdrop-blur-[32px] rounded-[2.5rem] p-2 flex justify-between items-center shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/10 ring-1 ring-white/5 relative overflow-hidden w-full max-w-md pointer-events-auto">
         {/* Active Tab Glow Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
         

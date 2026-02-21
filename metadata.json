@@ -1,6 +1,6 @@
 {
-  "name": "Echo Obsidian",
-  "description": "A minimalist, high-fidelity social experience featuring Obsidian Minimalist aesthetics, glassmorphism, and neon cyan accents. Includes the 'Pulse' interaction system, 'Wave' stories, and 'Direct Echo' real-time messaging.",
+  "name": "Echo",
+  "description": "A minimalist, high-fidelity social experience featuring Obsidian Minimalist aesthetics, glassmorphism, and neon cyan accents. Includes the 'Pulse' interaction system, 'Wave' stories, 'Direct Echo' real-time messaging, and full PWA support for offline access.",
   "requestFramePermissions": [
     "camera",
     "microphone"

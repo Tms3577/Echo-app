@@ -5,9 +5,11 @@ import { Notification } from '../types';
 interface ActivityViewProps {
   notifications: Notification[];
   onRead: (id: string) => void;
+  onMarkAllRead: () => void;
+  onUserClick?: (userId: string) => void;
 }
 
-const ActivityView: React.FC<ActivityViewProps> = ({ notifications, onRead }) => {
+const ActivityView: React.FC<ActivityViewProps> = ({ notifications, onRead, onMarkAllRead, onUserClick }) => {
   const getRelativeTime = (timestamp: number) => {
     const diff = Date.now() - timestamp;
     const mins = Math.floor(diff / 60000);
@@ -34,6 +36,12 @@ const ActivityView: React.FC<ActivityViewProps> = ({ notifications, onRead }) =>
           <p className="text-[10px] text-[#00f2ff] font-black uppercase tracking-[0.4em] opacity-60">Signal Intercepts</p>
         </div>
         <div className="flex gap-2 items-center">
+           <button 
+             onClick={onMarkAllRead}
+             className="px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 text-[9px] font-bold text-zinc-400 hover:text-white uppercase tracking-widest transition-colors border border-white/5"
+           >
+             Mark All Read
+           </button>
            <div className="w-2 h-2 rounded-full bg-[#00f2ff] animate-pulse" />
            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Intercepting...</span>
         </div>
@@ -52,8 +60,14 @@ const ActivityView: React.FC<ActivityViewProps> = ({ notifications, onRead }) =>
               <div className={`p-5 glass-card rounded-[2rem] flex flex-col gap-4 group hover:border-[#00f2ff]/30 transition-all cursor-pointer overflow-hidden ${act.isRead ? 'border-white/5 opacity-60' : 'border-[#00f2ff]/20'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <img src={act.senderAvatar} alt="" className="w-12 h-12 rounded-2xl object-cover border border-white/10 grayscale-[0.3] group-hover:grayscale-0 transition-all" />
+                    <div 
+                      className="relative cursor-pointer group/avatar"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUserClick?.(act.senderId);
+                      }}
+                    >
+                      <img src={act.senderAvatar} alt="" className="w-12 h-12 rounded-2xl object-cover border border-white/10 grayscale-[0.3] group-hover/avatar:grayscale-0 group-hover/avatar:scale-105 transition-all" />
                       <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#050505] shadow-xl ${meta.color}`}>
                         <svg className={`w-3 h-3 ${act.type === 'pulse' || act.type === 'resonate' ? 'text-black' : 'text-white'} fill-current`} viewBox="0 0 24 24">
                           {meta.icon}

@@ -3,25 +3,22 @@ import React, { useState } from 'react';
 import Logo from './Logo';
 
 interface AuthViewProps {
-  onSuccess: () => void;
+  onSuccess: (username: string, password?: string, mode?: 'login' | 'signup') => void;
 }
 
 const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [step, setStep] = useState<'form' | 'mfa'>('form');
   const [isVerifying, setIsVerifying] = useState(false);
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
 
   const handleAction = (e: React.FormEvent) => {
     e.preventDefault();
-    setStep('mfa');
-  };
-
-  const handleMFA = () => {
     setIsVerifying(true);
+    // Simulate a brief "initializing" delay for feel
     setTimeout(() => {
-      onSuccess();
-    }, 1500);
+      onSuccess(formData.username, formData.password, mode);
+      setIsVerifying(false);
+    }, 800);
   };
 
   return (
@@ -39,20 +36,19 @@ const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
           </p>
         </div>
 
-        {step === 'form' ? (
-          <form onSubmit={handleAction} className="space-y-4">
-            {mode === 'signup' && (
-              <div className="relative group">
-                <input
-                  type="text"
-                  placeholder="USERNAME"
-                  required
-                  className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm font-bold tracking-widest focus:outline-none focus:border-[#00f2ff]/50 transition-all placeholder:text-zinc-800"
-                  value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
-                />
-              </div>
-            )}
+        <form onSubmit={handleAction} className="space-y-4">
+          <div className="relative group">
+            <input
+              type="text"
+              placeholder="USERNAME"
+              required
+              className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm font-bold tracking-widest focus:outline-none focus:border-[#00f2ff]/50 transition-all placeholder:text-zinc-800"
+              value={formData.username}
+              onChange={(e) => setFormData({...formData, username: e.target.value})}
+            />
+          </div>
+
+          {mode === 'signup' && (
             <div className="relative group">
               <input
                 type="email"
@@ -63,71 +59,54 @@ const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
               />
             </div>
-            <div className="relative group">
-              <input
-                type="password"
-                placeholder="ACCESS KEY"
-                required
-                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm font-bold tracking-widest focus:outline-none focus:border-[#00f2ff]/50 transition-all placeholder:text-zinc-800"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-              />
-            </div>
-            
+          )}
+          
+          <div className="relative group">
+            <input
+              type="password"
+              placeholder="ACCESS KEY"
+              required
+              className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm font-bold tracking-widest focus:outline-none focus:border-[#00f2ff]/50 transition-all placeholder:text-zinc-800"
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+            />
+          </div>
+          
+          <div className="flex flex-col gap-2">
             <button
               type="submit"
-              className="w-full h-14 bg-[#00f2ff] text-black rounded-2xl font-black text-sm tracking-[0.2em] uppercase transition-all active:scale-95 shadow-[0_0_20px_rgba(0,242,255,0.4)] hover:shadow-[0_0_30px_rgba(0,242,255,0.6)]"
+              disabled={isVerifying}
+              className="w-full h-14 bg-[#00f2ff] text-black rounded-2xl font-black text-sm tracking-[0.2em] uppercase transition-all active:scale-95 shadow-[0_0_20px_rgba(0,242,255,0.4)] hover:shadow-[0_0_30px_rgba(0,242,255,0.6)] flex items-center justify-center gap-3 disabled:opacity-70"
             >
-              {mode === 'login' ? 'INITIALIZE LINK' : 'CREATE NODE'}
+              {isVerifying ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span>INITIALIZING...</span>
+                </>
+              ) : (
+                mode === 'login' ? 'INITIALIZE LINK' : 'CREATE NODE'
+              )}
             </button>
-
-            <button
-              type="button"
-              onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-              className="w-full py-2 text-[10px] text-zinc-600 font-bold uppercase tracking-widest hover:text-[#00f2ff] transition-colors"
-            >
-              {mode === 'login' ? "Don't have a node? Register" : "Already indexed? Sync back"}
-            </button>
-          </form>
-        ) : (
-          <div className="space-y-8 text-center animate-in fade-in slide-in-from-right-4 duration-500">
-            <div className="p-6 glass-card rounded-[2.5rem] border-white/10 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00f2ff] to-transparent animate-pulse" />
-              <p className="text-[10px] text-zinc-400 uppercase tracking-[0.3em] mb-6 font-black">Biometric Resonance Required</p>
-              
-              <button
-                onClick={handleMFA}
-                disabled={isVerifying}
-                className="relative w-28 h-28 rounded-full bg-white/5 border border-[#00f2ff]/20 flex items-center justify-center mx-auto group active:scale-90 transition-all hover:border-[#00f2ff]/50 shadow-inner"
-              >
-                {isVerifying ? (
-                  <div className="absolute inset-0 rounded-full border-4 border-t-[#00f2ff] border-transparent animate-spin" />
-                ) : (
-                  <div className="absolute inset-2 rounded-full border border-[#00f2ff]/10 animate-pulse" />
-                )}
-                <svg className={`w-12 h-12 ${isVerifying ? 'text-zinc-800' : 'text-[#00f2ff]'} drop-shadow-[0_0_15px_#00f2ff] transition-colors`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0112 3c4.148 0 7.747 2.512 9.324 6.115M12 11V3m0 8c0 3.517 1.009 6.799 2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 21" />
-                </svg>
-              </button>
-              
-              <p className="mt-6 text-[11px] text-[#00f2ff] font-bold uppercase tracking-widest opacity-80">
-                {isVerifying ? 'CALIBRATING...' : 'TOUCH TO RESONATE'}
-              </p>
-              <div className="mt-8 flex justify-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-zinc-800 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
-                ))}
-              </div>
-            </div>
             
-            <button 
-              onClick={() => setStep('form')}
-              className="text-[10px] text-zinc-700 hover:text-white transition-colors uppercase tracking-widest font-black"
-            >
-              Cancel Link
-            </button>
+            {mode === 'login' && (
+              <button
+                type="button"
+                onClick={() => alert("Access key recovery requires physical node access. Contact Syndicate support.")}
+                className="text-[9px] text-zinc-700 font-bold uppercase tracking-widest hover:text-zinc-500 transition-colors py-1"
+              >
+                Forgot Access Key?
+              </button>
+            )}
           </div>
-        )}
+
+          <button
+            type="button"
+            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+            className="w-full py-4 text-[10px] text-zinc-500 font-black uppercase tracking-[0.3em] hover:text-[#00f2ff] transition-all border border-white/5 rounded-2xl bg-white/[0.02] hover:bg-white/5 active:scale-95"
+          >
+            {mode === 'login' ? "Initialize New Node (Sign Up)" : "Return to Syndicate (Log In)"}
+          </button>
+        </form>
 
         <div className="pt-4 text-center">
           <p className="text-[9px] text-zinc-800 tracking-[0.5em] uppercase font-black">ENCRYPTED NODE • SYNDICATE PROTOCOL V4.2</p>

@@ -71,9 +71,12 @@ const DirectEcho: React.FC<DirectEchoProps> = ({ onClose }) => {
           <h2 className="text-3xl font-black tracking-tighter text-white">Echoes</h2>
           <p className="text-[10px] text-[#00f2ff] font-black uppercase tracking-[0.4em] opacity-60">Secure Transmissions</p>
         </div>
-        <button className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all active:scale-90">
-          <svg className="w-6 h-6 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        <button 
+          onClick={onClose}
+          className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all active:scale-90 text-zinc-400 hover:text-white"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
@@ -134,13 +137,6 @@ const DirectEcho: React.FC<DirectEchoProps> = ({ onClose }) => {
         
         {!activeConvId ? (
           <div className="h-full relative">
-            <div className="absolute top-8 right-8 z-20">
-              <button onClick={onClose} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-zinc-400 hover:text-white transition-all active:scale-90 border border-white/10">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
             {renderInbox()}
           </div>
         ) : (

@@ -1,18 +1,40 @@
-import React from 'react';
+
+import React, { useRef } from 'react';
 import { Wave } from '../types';
 
 interface WaveBarProps {
   waves: Wave[];
   onWaveClick: (wave: Wave) => void;
+  onAddWave: (media: string) => void;
 }
 
-const WaveBar: React.FC<WaveBarProps> = ({ waves, onWaveClick }) => {
+const WaveBar: React.FC<WaveBarProps> = ({ waves, onWaveClick, onAddWave }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          onAddWave(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
-    <div className="relative mb-10 group/wavebar">
-      <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide no-scrollbar -mx-4 px-4 scroll-smooth">
+    <div className="relative mb-8 group/wavebar overflow-hidden -mx-4">
+      <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide no-scrollbar scroll-smooth snap-x snap-mandatory px-4">
         {/* Your Wave - Add Node */}
-        <div className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group/add">
-          <div className="relative p-[2.5px] rounded-full border border-dashed border-zinc-700 hover:border-[#00f2ff]/60 transition-all duration-500 active:scale-90 transform">
+        <div 
+          className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group/add snap-center"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="relative p-[3px] rounded-full border border-dashed border-zinc-700 hover:border-[#00f2ff]/60 transition-all duration-500 active:scale-90 transform">
              <div className="bg-[#050505] p-[3px] rounded-full">
               <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-600 group-hover/add:text-[#00f2ff] transition-colors group-hover/add:bg-[#00f2ff]/5">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,12 +44,19 @@ const WaveBar: React.FC<WaveBarProps> = ({ waves, onWaveClick }) => {
             </div>
           </div>
           <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600 group-hover/add:text-[#00f2ff] transition-colors">Add Wave</span>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*"
+            onChange={handleFileChange}
+          />
         </div>
 
         {waves.map((wave) => (
           <div 
             key={wave.id} 
-            className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group"
+            className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group snap-center"
             onClick={() => onWaveClick(wave)}
           >
             <div className={`relative p-[3px] rounded-full transition-all duration-700 active:scale-90 transform ${wave.hasSeen 

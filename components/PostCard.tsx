@@ -6,10 +6,12 @@ interface PostCardProps {
   item: FeedItem;
   onPulse: (id: string) => void;
   onResonate: (id: string) => void;
+  onUserClick?: (userId: string) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate }) => {
+const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate, onUserClick }) => {
   const [rippling, setRippling] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const handlePulseClick = () => {
     setRippling(true);
@@ -23,21 +25,51 @@ const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate }) => {
     if (window.navigator.vibrate) window.navigator.vibrate([10, 30, 10]);
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Echo from ${item.username}`,
+          text: item.caption,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied to clipboard");
+    }
+  };
+
+  const handleReport = () => {
+    setShowMenu(false);
+    const reason = window.prompt("Identify the anomaly (Reason for report):");
+    if (reason) {
+      console.log(`Reported post ${item.id} for reason: ${reason}`);
+      alert("Anomaly logged. System review initiated.");
+    }
+  };
+
   return (
-    <div className="glass-card rounded-[2.5rem] overflow-hidden group border-white/5 hover:border-[#00f2ff]/20 transition-all duration-700 shadow-2xl bg-[#050505]/40 animate-in fade-in slide-in-from-bottom-6 duration-700">
+    <div className={`glass-card rounded-[2.5rem] group border-white/5 hover:border-[#00f2ff]/20 transition-all duration-700 shadow-2xl bg-[#050505]/40 animate-in fade-in slide-in-from-bottom-6 duration-700 ${showMenu ? 'z-40 relative' : 'z-0 relative'}`}>
       {/* Header: User Info */}
-      <div className="p-6 flex items-center justify-between bg-[#050505]/20 backdrop-blur-md">
-        <div className="flex items-center gap-4">
-          <div className="relative p-[2px] rounded-full bg-gradient-to-tr from-[#00f2ff] to-transparent ring-1 ring-[#00f2ff]/10">
+      <div className="p-6 flex items-center justify-between bg-[#050505]/20 backdrop-blur-md rounded-t-[2.5rem]">
+        <div 
+          className="flex items-center gap-4 cursor-pointer group/user"
+          onClick={() => onUserClick?.(item.userId)}
+        >
+          <div className="relative p-[2px] rounded-full bg-gradient-to-tr from-[#00f2ff] to-transparent ring-1 ring-[#00f2ff]/10 group-hover/user:shadow-[0_0_15px_rgba(0,242,255,0.3)] transition-all">
             <img 
               src={item.avatar} 
               alt={item.username} 
-              className="w-11 h-11 rounded-full border-2 border-[#050505] object-cover group-hover:scale-105 transition-transform" 
+              className="w-11 h-11 rounded-full border-2 border-[#050505] object-cover group-hover/user:scale-105 transition-transform" 
             />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black tracking-tight text-white">{item.username}</span>
+              <span className="text-sm font-black tracking-tight text-white group-hover/user:text-[#00f2ff] transition-colors">{item.username}</span>
               {item.originalCreator && (
                 <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#00f2ff]/10 border border-[#00f2ff]/20">
                   <svg className="w-2.5 h-2.5 text-[#00f2ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,11 +82,30 @@ const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate }) => {
             <p className="text-[10px] text-zinc-600 font-bold tracking-widest uppercase opacity-70">{item.timestamp}</p>
           </div>
         </div>
-        <button className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 hover:text-white transition-all text-zinc-600 active:scale-90">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-          </svg>
-        </button>
+        <div className="relative z-40">
+          <button 
+            onClick={() => setShowMenu(!showMenu)}
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 hover:text-white transition-all text-zinc-600 active:scale-90"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+            </svg>
+          </button>
+          
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+              <div className="absolute right-0 top-12 w-32 bg-[#050505] border border-white/10 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <button 
+                  onClick={handleReport}
+                  className="w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-white/5 transition-colors"
+                >
+                  Report Signal
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Main Content: The Echo Media */}
@@ -87,7 +138,7 @@ const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate }) => {
       </div>
 
       {/* Action Bar: Pulse & Resonate */}
-      <div className="px-8 py-6 flex flex-col gap-5 bg-[#050505]/40 backdrop-blur-md border-t border-white/5">
+      <div className="px-8 py-6 flex flex-col gap-5 bg-[#050505]/40 backdrop-blur-md border-t border-white/5 rounded-b-[2.5rem]">
         <div className="flex items-center gap-10">
           <PulseButton 
             active={item.hasPulsed} 
@@ -110,7 +161,10 @@ const PostCard: React.FC<PostCardProps> = ({ item, onPulse, onResonate }) => {
           </div>
 
           <div className="flex flex-col items-center gap-1.5">
-            <button className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] bg-white/5 border border-white/5 text-zinc-500 hover:text-white hover:bg-white/10 active:scale-75 transition-all">
+            <button 
+              onClick={handleShare}
+              className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] bg-white/5 border border-white/5 text-zinc-500 hover:text-white hover:bg-white/10 active:scale-75 transition-all"
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
